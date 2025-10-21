@@ -1,0 +1,66 @@
+name: Build 111 for Windows
+
+on:
+  schedule:
+    - cron: '0 0,12 * * *' 
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Install dependencies
+        shell: bash
+        run: |
+          choco install -y 7zip
+          pip install aqtinstall
+
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:/Qt
+
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install glslangValidator
+        shell: bash
+        run: |
+          curl -L -o glslang.zip https://github.com/KhronosGroup/glslang/releases/download/main-tot/glslang-master-windows-Release.zip
+          unzip glslang.zip -d glslang
+          echo "$PWD/glslang/bin" >> $GITHUB_PATH
+
+      - name: Clone 111 source
+        shell: bash
+        run: |
+          git clone --depth=1 ${{ secrets.URL }} 111
+
+      - name: Set environment variables
+        shell: bash
+        run: |
+          echo "WINDEPLOYQT=/c/Qt/6.9.1/msvc2022_64/bin/windeployqt6.exe" >> $GITHUB_ENV
+          echo "BUILD_TYPE=Release" >> $GITHUB_ENV
+          echo "USE_WEBENGINE=false" >> $GITHUB_ENV
+          echo "USE_MULTIMEDIA=false" >> $GITHUB_ENV
+          echo "BUNDLE_QT=false" >> $GITHUB_ENV
+          echo "QT_CMAKE_PATH=C:/Qt/6.9.1/msvc2022_64/lib/cmake/Qt6" >> $GITHUB_ENV
+
+      - name: Build 111
+        shell: bash
+        run: |
+          cd 111
+          chmod +x .ci/windows/build.sh
+          .ci/windows/build.sh -DCMAKE_PREFIX_PATH="$QT_CMAKE_PATH"
+
+      - name: Package 111
+        shell: bash
+        run: |
+          cd 111
+          chmod +x .ci/windows/package.sh
+          .ci/windows/package.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 111-windows-build
+          path: 111/artifacts/*.zip
