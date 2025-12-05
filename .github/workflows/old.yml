@@ -2,6 +2,8 @@ name: Build old for Android
 
 on:
   workflow_dispatch:  
+  schedule:
+    - cron: '0 0,12 * * *'  
 
 jobs:
   build:
@@ -38,19 +40,19 @@ jobs:
           "cmake;3.22.1"
         echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
     
-- name: Build Android APKs (no ChromeOS)
-  working-directory: ${{ env.REPO_ROOT }}/src/android
-  run: |
-    chmod +x gradlew
-    ./gradlew \
-      assembleMainlineRelease \
-      assembleMainlineRelWithDebInfo \
-      assembleLegacyRelease \
-      assembleLegacyRelWithDebInfo \
-      assembleGenshinSpoofRelease \
-      assembleGenshinSpoofRelWithDebInfo \
-      -Pandroid.ndkVersion=25.2.9519653 \
-      -Pandroid.cmakeVersion=3.22.1 || echo "Build may have warnings"
+    - name: Build Android APKs (no ChromeOS)
+      working-directory: ${{ env.REPO_ROOT }}/src/android
+      run: |
+        chmod +x gradlew
+        ./gradlew \
+          assembleMainlineRelease \
+          assembleMainlineRelWithDebInfo \
+          assembleLegacyRelease \
+          assembleLegacyRelWithDebInfo \
+          assembleGenshinSpoofRelease \
+          assembleGenshinSpoofRelWithDebInfo \
+          -Pandroid.ndkVersion=25.2.9519653 \
+          -Pandroid.cmakeVersion=3.22.1 || echo "Build may have warnings"
     
     - name: Upload APKs (if exist)
       uses: actions/upload-artifact@v4
