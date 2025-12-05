@@ -42,7 +42,13 @@ jobs:
       working-directory: ${{ env.REPO_ROOT }}/src/android
       run: |
         chmod +x gradlew
-        ./gradlew assembleRelWithDebInfo assemblerelease \
+        ./gradlew \
+          assembleMainlineRelease \
+          assembleMainlineRelWithDebInfo \
+          assembleLegacyRelease \
+          assembleLegacyRelWithDebInfo \
+          assembleGenshinSpoofRelease \
+          assembleGenshinSpoofRelWithDebInfo \
           -Pandroid.ndkVersion=25.2.9519653 \
           -Pandroid.cmakeVersion=3.22.1 || echo "Build may have warnings"
     
