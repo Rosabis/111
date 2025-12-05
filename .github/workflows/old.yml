@@ -2,8 +2,6 @@ name: Build old for Android
 
 on:
   workflow_dispatch:  
-  schedule:
-    - cron: '0 0,12 * * *'  
 
 jobs:
   build:
@@ -40,11 +38,17 @@ jobs:
           "cmake;3.22.1"
         echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
     
-    - name: Build Android APKs
+    - name: Build Android APKs (no ChromeOS)
       working-directory: ${{ env.REPO_ROOT }}/src/android
       run: |
         chmod +x gradlew
-        ./gradlew assembleRelWithDebInfo assemblerelease \
+        ./gradlew \
+          assembleStandardRelease \
+          assembleStandardRelWithDebInfo \
+          assembleLegacyRelease \
+          assembleLegacyRelWithDebInfo \
+          assembleOptimizedRelease \
+          assembleOptimizedRelWithDebInfo \
           -Pandroid.ndkVersion=25.2.9519653 \
           -Pandroid.cmakeVersion=3.22.1 || echo "Build may have warnings"
     
@@ -61,8 +65,9 @@ jobs:
       id: find-apks
       run: |
         cd ${{ env.REPO_ROOT }}/src/android/app/build/outputs/apk
-        find . -name "*.apk" -type f | while read file; do
+        # 过滤掉 ChromeOS APK
+        find . -name "*.apk" -type f ! -path "*/chromeos/*" | while read file; do
           echo "Found APK: $file"
           echo "file_size=$(stat -c%s "$file")" >> $GITHUB_ENV
         done
-        echo "apk_files=$(find . -name "*.apk" -type f | tr '\n' ' ')" >> $GITHUB_ENV
+        echo "apk_files=$(find . -name "*.apk" -type f ! -path "*/chromeos/*" | tr '\n' ' ')" >> $GITHUB_ENV
